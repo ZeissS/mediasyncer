@@ -1,0 +1,79 @@
+package main
+
+import (
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/ogier/pflag"
+
+	"github.com/ZeissS/mediasyncer"
+	"github.com/ZeissS/mediasyncer/p2p"
+)
+
+var p2pConfig p2p.Config = p2p.DefaultConfig()
+var fsConfig mediasyncer.FileServerConfig
+
+var (
+	volumePath         string
+	formula            string
+	formulaStaticPrice float32
+)
+
+func init() {
+	pflag.StringVar(&formula, "price-formula", "static", "What price formular to use? static, random")
+	pflag.Float32Var(&formulaStaticPrice, "price-static", 1.0, "Price for static formular")
+
+	pflag.StringVar(&volumePath, "volume", "./lib", "What files to sync")
+
+	pflag.StringVar(&fsConfig.Addr, "http-addr", "127.0.0.1", "IP to listen on. Must be resolvable by all peers")
+	pflag.IntVar(&fsConfig.Port, "http-port", 8080, "Port for HTTP FileServer")
+
+	pflag.IntVar(&p2pConfig.BindPort, "bind-port", 8000, "The port to bind to")
+	pflag.StringVar(&p2pConfig.Name, "name", "mediasyncer", "The name of this process. Must be unique for the memberlist cluster")
+}
+
+func pricer() mediasyncer.PriceFormula {
+	switch formula {
+	case "static":
+		return mediasyncer.PriceFormulaStatic(mediasyncer.Price(formulaStaticPrice))
+	case "random":
+		return mediasyncer.PriceFormulaRandom()
+	default:
+		panic("Unknown formula: " + formula)
+	}
+
+}
+
+func main() {
+	pflag.Parse()
+
+	log.SetPrefix(p2pConfig.Name + " ")
+
+	network := p2p.New(p2pConfig)
+	network.Join(pflag.Args())
+
+	volume := mediasyncer.OpenVolume(volumePath)
+
+	cfg := mediasyncer.Config{
+		FileServerConfig: fsConfig,
+		PriceFormula:     pricer(),
+		Transport:        network,
+		Volume:           volume,
+	}
+	syncer := mediasyncer.New(cfg)
+	go syncer.Serve()
+
+	ch := make(chan os.Signal)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	<-ch
+
+	log.Println("Received shutdown signal. Stopping ...")
+	syncer.Stop()
+
+	if err := network.Leave(10 * time.Second); err != nil {
+		log.Printf("ERROR: %v", err)
+	}
+}
