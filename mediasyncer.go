@@ -2,19 +2,17 @@ package mediasyncer
 
 import (
 	"sync"
-	"time"
 )
 
 type Config struct {
 	Transport        Transport
 	PriceFormula     PriceFormula
-	Volume           *Volume
+	Volume           Volume
 	FileServerConfig FileServerConfig
 }
 type Syncer struct {
 	Config
 	running sync.WaitGroup
-	ticker  *time.Ticker
 
 	FileServer *FileServer
 	Bidder     *Bidder
@@ -32,7 +30,6 @@ func New(cfg Config) *Syncer {
 
 	return &Syncer{
 		Config: cfg,
-		ticker: time.NewTicker(10 * time.Second),
 
 		Auctioneer: auctioneer,
 		FileServer: fs,
@@ -45,24 +42,9 @@ func (s *Syncer) Serve() {
 	go s.Auctioneer.Serve()
 	go s.Bidder.Serve()
 
-	/*s.Transport.Subscribe("hello", func(peer, mtype, msg string) {
-		log.Println("!hello", peer, mtype, msg)
-	})
-
-	for range s.ticker.C {
-		s.Tick()
-	}*/
-}
-
-func (s *Syncer) Tick() {
-	s.running.Add(1)
-	defer s.running.Done()
-	s.Transport.BroadcastTCP("hello", "Hello from "+s.Transport.Name())
 }
 
 func (s *Syncer) Stop() {
-
-	s.ticker.Stop()
 	s.Auctioneer.Stop()
 	s.Bidder.Stop()
 	s.FileServer.Close()

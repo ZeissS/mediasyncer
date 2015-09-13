@@ -2,12 +2,15 @@
 
 prepare_node() {
 	local name=$1
+	local show="my-show-$RANDOM"
 
 	rm -rf ./data/$name
 	mkdir -p ./data/$name
-	mkdir -p ./data/$name/my-show/
+	mkdir -p ./data/$name/$show/ ./data/$name/my-show/
+
 	
-	dd if=/dev/zero of=./data/$name/my-show/my-show-$RANDOM.mkv bs=1024 count=5240
+	
+	dd if=/dev/zero of=./data/$name/$show/my-show-$RANDOM.mkv bs=1024 count=5240
 }
 
 start_node() {

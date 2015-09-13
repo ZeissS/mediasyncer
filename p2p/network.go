@@ -8,9 +8,13 @@ import (
 	"github.com/hashicorp/memberlist"
 )
 
-const (
-	printMessages = false
+var (
+	printMessages = true
 )
+
+func PrintMessages(b bool) {
+	printMessages = b
+}
 
 type Config *memberlist.Config
 

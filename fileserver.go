@@ -17,12 +17,12 @@ type FileServerConfig struct {
 type FileServer struct {
 	FileServerConfig
 
-	Volume *Volume
+	Volume Volume
 
 	l net.Listener
 }
 
-func NewFileServer(cfg FileServerConfig, vol *Volume) *FileServer {
+func NewFileServer(cfg FileServerConfig, vol Volume) *FileServer {
 	return &FileServer{
 		FileServerConfig: cfg,
 		Volume:           vol,
@@ -51,7 +51,7 @@ func (fs *FileServer) Close() {
 // The URL may be signed or have any number of query parameter.
 // A client performing the upload MUST NOT modify this URL.
 func (fs *FileServer) CreateUploadURL(file FileID) (string, error) {
-	if file.VolumeID != fs.Volume.ID {
+	if file.VolumeID != fs.Volume.ID() {
 		panic("Invalid volume id")
 	}
 
@@ -87,24 +87,30 @@ func (fs *FileServer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		path := req.RequestURI
 
 		file := FileID{
-			VolumeID: fs.Volume.ID,
+			VolumeID: fs.Volume.ID(),
 			Path:     path,
 		}
 		size := req.Header.Get("Content-Length")
 
 		log.Println("Receiving upload for " + file.String() + " (size=" + size + ")")
 
+		// We expect a does-not-exist error here.
+		// no error => File exists => forbidden
+		// does-not-exist => No file there => OK, go on
+		// other error => internal server error
 		_, err := fs.Volume.Stat(path)
 		if err == nil {
 			w.WriteHeader(http.StatusForbidden)
 			return
 		} else if !os.IsNotExist(err) {
+			log.Println("ERROR Stat(): " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		writer, err := fs.Volume.Write(path)
 		if err != nil {
+			log.Println("ERROR Write(): " + err.Error())
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

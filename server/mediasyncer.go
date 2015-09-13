@@ -10,6 +10,7 @@ import (
 	"github.com/ogier/pflag"
 
 	"github.com/ZeissS/mediasyncer"
+	"github.com/ZeissS/mediasyncer/disk"
 	"github.com/ZeissS/mediasyncer/p2p"
 )
 
@@ -17,9 +18,10 @@ var p2pConfig p2p.Config = p2p.DefaultConfig()
 var fsConfig mediasyncer.FileServerConfig
 
 var (
-	volumePath         string
-	formula            string
-	formulaStaticPrice float32
+	volumePath           string
+	formula              string
+	formulaStaticPrice   float32
+	printNetworkMessages bool
 )
 
 func init() {
@@ -33,6 +35,8 @@ func init() {
 
 	pflag.IntVar(&p2pConfig.BindPort, "bind-port", 8000, "The port to bind to")
 	pflag.StringVar(&p2pConfig.Name, "name", "mediasyncer", "The name of this process. Must be unique for the memberlist cluster")
+
+	pflag.BoolVar(&printNetworkMessages, "debug", false, "Print network messages received/sent")
 }
 
 func pricer() mediasyncer.PriceFormula {
@@ -44,24 +48,28 @@ func pricer() mediasyncer.PriceFormula {
 	default:
 		panic("Unknown formula: " + formula)
 	}
+}
 
+func volume() mediasyncer.Volume {
+	v := disk.Open(volumePath)
+	return v
 }
 
 func main() {
 	pflag.Parse()
+
+	p2p.PrintMessages(printNetworkMessages)
 
 	log.SetPrefix(p2pConfig.Name + " ")
 
 	network := p2p.New(p2pConfig)
 	network.Join(pflag.Args())
 
-	volume := mediasyncer.OpenVolume(volumePath)
-
 	cfg := mediasyncer.Config{
 		FileServerConfig: fsConfig,
 		PriceFormula:     pricer(),
 		Transport:        network,
-		Volume:           volume,
+		Volume:           volume(),
 	}
 	syncer := mediasyncer.New(cfg)
 	go syncer.Serve()

@@ -6,7 +6,7 @@ import (
 )
 
 type Bidder struct {
-	Volume       *Volume
+	Volume       Volume
 	Network      NetworkProtocol
 	PriceFormula PriceFormula
 	FileServer   *FileServer
@@ -22,14 +22,15 @@ type bidderAuctionStarted struct {
 	stats FileStats
 }
 
-func NewBidder(n NetworkProtocol, vol *Volume, pf PriceFormula, fs *FileServer) *Bidder {
+func NewBidder(n NetworkProtocol, vol Volume, pf PriceFormula, fs *FileServer) *Bidder {
 	b := &Bidder{
 		Network:      n,
 		Volume:       vol,
 		PriceFormula: pf,
 		FileServer:   fs,
 
-		active: true,
+		active:   true,
+		auctions: make(chan bidderAuctionStarted),
 	}
 
 	b.Network.OnAuctionStart(func(peer string, auctionID AuctionID, file FileID, stats FileStats) {
@@ -44,7 +45,7 @@ func (b *Bidder) Serve() {
 		select {
 		case auction := <-b.auctions:
 			log.Println("Received auction " + string(auction.ID) + " from " + auction.peer + " for file " + auction.file.String())
-			freeSpace := b.Volume.AvailableBytes()
+			freeSpace := ByteSize(b.Volume.AvailableBytes())
 			if freeSpace < auction.stats.Size {
 				log.Println(auction.ID + ": not bidding - not enough space on volume.")
 				continue
@@ -56,18 +57,18 @@ func (b *Bidder) Serve() {
 				continue
 			}
 
-			_, err := vol.Stat(file.Path)
+			_, err := b.Volume.Stat(auction.file.Path)
 			if err != nil {
 				if os.IsNotExist(err) {
 					// Only bid, if we don't have this file locally.
 					url, err := b.FileServer.CreateUploadURL(FileID{
-						VolumeID: b.Volume.ID,
-						Path:     file.Path,
+						VolumeID: b.Volume.ID(),
+						Path:     auction.file.Path,
 					})
 					if err != nil {
 						panic("Unable to create upload URL")
 					}
-					n.AuctionBid(peer, auctionID, price, url)
+					b.Network.AuctionBid(auction.peer, auction.ID, price, url)
 					continue
 				}
 				panic("Stat error: " + err.Error())

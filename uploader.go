@@ -1,18 +1,19 @@
 package mediasyncer
 
 import (
+	"io"
 	"log"
 	"net/http"
 )
 
 type Uploader struct {
-	Volume *Volume
+	Volume Volume
 }
 
 func (u *Uploader) Upload(file FileID, peer PeerID, uploadURL string, done chan<- FileID) {
 	log.Printf("Uploading file %s to %s\n", file, peer)
 
-	if u.Volume.ID != file.VolumeID {
+	if u.Volume.ID() != file.VolumeID {
 		panic("Uploading invalid volume-id!")
 	}
 
@@ -20,7 +21,9 @@ func (u *Uploader) Upload(file FileID, peer PeerID, uploadURL string, done chan<
 	if err != nil {
 		panic("Cannot read file: " + err.Error())
 	}
-	defer reader.Close()
+	if closer, ok := reader.(io.Closer); ok {
+		defer closer.Close()
+	}
 
 	req, err := http.NewRequest("PUT", uploadURL, reader)
 	if err != nil {
