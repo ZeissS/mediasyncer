@@ -15,7 +15,10 @@ to be done regularly.
 
 == Current implementation state
 
-Basic auctioning, bidding and transfering works. Current supported bidding strategies are 'random' or 'static'. Files are only auctioned if their 'modtime' is older than 60 minutes. Only one file is auctioned at a time. An auction is triggered every 10 seconds.
+Basic auctioning, bidding and transfering works. Current supported bidding strategies are 'random' or 'static'.
+Future strategies could be based on file size, pathname or age to group related files on certain disks.
+
+Files are only auctioned if their 'modtime' is older than 60 minutes. Only one file is auctioned at a time. An auction is triggered every 10 seconds.
 
 Uploads to the winning peer is done via `HTTP PUT'. Afterwards the local file is deleted. No checksum checks are performed yet.
 
