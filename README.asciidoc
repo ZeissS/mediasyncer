@@ -1,6 +1,6 @@
 = MediaSyncer
 
-Automatic rebalancing files between peers in a gossip network. 
+Automatic rebalancing files between peers in a gossip based peer-to-peer network. 
 
 == The Problem
 
@@ -11,16 +11,18 @@ to be done regularly.
 
 == The solution
 
-+mediasyncer+ solves this by setting up a gossip network and performing regular auctions between the peers. Each peer regularly asks other peers if they want to store a file. This is implemented via an auction: Each peer replies with a bid and the highest bidder gets the file transfered.
++mediasyncer+ solves this by setting up a gossip network and performing regular auctions between the peers. Each peer regularly asks other peers if they want to store a file the current peer has. This is implemented via an auction: Each peer replies with a bid and the highest bidder gets the file transfered. 
+The bid can be influenced by the amount of free space or the file itself that gets bid one. This makes it is easy to implement a bidding strategy that automatically moves files away as long as there is local disk space available. By voting with dynamic bids based on the files, it is even possible to move files based  
 
 == Current implementation state
 
-Basic auctioning, bidding and transfering works. Current supported bidding strategies are 'random' or 'static'.
+Basic auctioning, bidding and transfering works. Current supported bidding strategies are `random` or `static`.
 Future strategies could be based on file size, pathname or age to group related files on certain disks.
 
-Files are only auctioned if their 'modtime' is older than 60 minutes. Only one file is auctioned at a time. An auction is triggered every 10 seconds.
+Files are only auctioned if their `modtime` is older than 60 minutes. Only one file is auctioned at a time. An auction is triggered every 10 seconds.
 
-Uploads to the winning peer is done via `HTTP PUT'. Afterwards the local file is deleted. No checksum checks are performed yet.
+Uploads to the winning peer is done via `HTTP PUT`. Afterwards the local file is deleted. No checksum checks are performed yet.
+Files can also be downloaded via the HTTP endpoint. Filelisting is not supported yet though.
 
 == Configuration
 
