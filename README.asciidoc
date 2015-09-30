@@ -1,0 +1,36 @@
+= MediaSyncer
+
+Automatic rebalancing files between peers in a gossip network. 
+
+== The Problem
+
+I have a bunch of disks attached to different devices (A MyWorldBook, 2 Raspberry PIs, a PC) 
+and use all of them for storing my collection of files and videos. If a disk gets full, I have
+to manually move around files though. Since I mainly place new files on one device, this needs
+to be done regularly.
+
+== The solution
+
++mediasyncer+ solves this by setting up a gossip network and performing regular auctions between the peers. Each peer regularly asks other peers if they want to store a file. This is implemented via an auction: Each peer replies with a bid and the highest bidder gets the file transfered.
+
+== Current implementation state
+
+Basic auctioning, bidding and transfering works. Current supported bidding strategies are 'random' or 'static'. Files are only auctioned if their 'modtime' is older than 60 minutes. Only one file is auctioned at a time. An auction is triggered every 10 seconds.
+
+Uploads to the winning peer is done via `HTTP PUT'. Afterwards the local file is deleted. No checksum checks are performed yet.
+
+== Configuration
+
+ * name
+ * price-formula
+ * price-static float
+ * volume string
+ * http-addr string
+ * http-port int
+ * bind-port int
+
+ * debug bool
+
+== Used libraries
+
+ * Hashicorps Memberlist
