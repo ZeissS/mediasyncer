@@ -24,6 +24,8 @@ Files are only auctioned if their `modtime` is older than 60 minutes. Only one f
 Uploads to the winning peer is done via `HTTP PUT`. Afterwards the local file is deleted. No checksum checks are performed yet.
 Files can also be downloaded via the HTTP endpoint. Filelisting is not supported yet though.
 
+__NOTE__: This is probably very unstable at the momement and might delete your data. Use at your own risk.
+
 == Configuration
 
  * name
@@ -39,3 +41,4 @@ Files can also be downloaded via the HTTP endpoint. Filelisting is not supported
 == Used libraries
 
  * Hashicorps Memberlist
+ * Ogiers Pflag
