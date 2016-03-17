@@ -1,4 +1,4 @@
-package mediasyncer
+package libsyncer
 
 import (
 	"io"

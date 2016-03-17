@@ -1,6 +1,6 @@
 // The interfaces of the protocol how peers talk to each other
 
-package mediasyncer
+package libsyncer
 
 import (
 	"fmt"

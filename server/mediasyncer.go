@@ -9,13 +9,13 @@ import (
 
 	"github.com/ogier/pflag"
 
-	"github.com/ZeissS/mediasyncer"
-	"github.com/ZeissS/mediasyncer/disk"
-	"github.com/ZeissS/mediasyncer/p2p"
+	"github.com/zeisss/mediasyncer/libsyncer"
+	"github.com/zeisss/mediasyncer/disk"
+	"github.com/zeisss/mediasyncer/p2p"
 )
 
 var p2pConfig p2p.Config = p2p.DefaultConfig()
-var fsConfig mediasyncer.FileServerConfig
+var fsConfig libsyncer.FileServerConfig
 
 var (
 	volumePath           string
@@ -39,18 +39,18 @@ func init() {
 	pflag.BoolVar(&printNetworkMessages, "debug", false, "Print network messages received/sent")
 }
 
-func pricer() mediasyncer.PriceFormula {
+func pricer() libsyncer.PriceFormula {
 	switch formula {
 	case "static":
-		return mediasyncer.PriceFormulaStatic(mediasyncer.Price(formulaStaticPrice))
+		return libsyncer.PriceFormulaStatic(libsyncer.Price(formulaStaticPrice))
 	case "random":
-		return mediasyncer.PriceFormulaRandom()
+		return libsyncer.PriceFormulaRandom()
 	default:
 		panic("Unknown formula: " + formula)
 	}
 }
 
-func volume() mediasyncer.Volume {
+func volume() libsyncer.Volume {
 	v := disk.Open(volumePath)
 	return v
 }
@@ -65,13 +65,13 @@ func main() {
 	network := p2p.New(p2pConfig)
 	network.Join(pflag.Args())
 
-	cfg := mediasyncer.Config{
+	cfg := libsyncer.Config{
 		FileServerConfig: fsConfig,
 		PriceFormula:     pricer(),
 		Transport:        network,
 		Volume:           volume(),
 	}
-	syncer := mediasyncer.New(cfg)
+	syncer := libsyncer.New(cfg)
 	go syncer.Serve()
 
 	ch := make(chan os.Signal)
