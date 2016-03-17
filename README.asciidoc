@@ -1,5 +1,7 @@
 = MediaSyncer
 
+image:https://app.wercker.com/status/850bd47b5003aa433f6c2e8d38cf97bb/m[]
+
 Automatic rebalancing files between peers in a gossip based peer-to-peer network. 
 
 == The Problem
