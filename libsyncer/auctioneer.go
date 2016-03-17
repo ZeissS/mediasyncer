@@ -141,7 +141,7 @@ func (a *Auctioneer) Serve() {
 			if len(bids) == 0 {
 				log.Println("No bids received. Auction failed.")
 			} else {
-				var winningBid auctionBid = bids[0]
+				winningBid := bids[0]
 
 				for _, bid := range bids {
 					if bid.price > winningBid.price {
@@ -177,6 +177,7 @@ func (a *Auctioneer) Serve() {
 	}
 }
 
+// Stop stops the ticker for new auctions.
 func (a *Auctioneer) Stop() {
 	a.Ticker.Stop()
 }

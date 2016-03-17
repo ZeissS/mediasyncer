@@ -41,7 +41,7 @@ func NewBidder(n NetworkProtocol, vol Volume, pf PriceFormula, fs *FileServer) *
 		auctions: make(chan bidderAuctionStarted),
 	}
 
-	b.Network.OnAuctionStart(func(peer string, auctionID AuctionID, file FileID, stats FileStats) {
+	b.network.OnAuctionStart(func(peer string, auctionID AuctionID, file FileID, stats FileStats) {
 		b.auctions <- bidderAuctionStarted{peer, auctionID, file, stats}
 	})
 
@@ -60,7 +60,7 @@ func (b *Bidder) Serve() {
 				log.Println(auction.ID + ": not bidding - not enough space on volume.")
 				continue
 			}
-			price := b.PriceFormula(auction.file, auction.stats, freeSpace)
+			price := b.priceFormula(auction.file, auction.stats, freeSpace)
 
 			if price == -1 {
 				log.Println("Not bidding. File not wanted.")
@@ -71,8 +71,8 @@ func (b *Bidder) Serve() {
 			if err != nil {
 				if os.IsNotExist(err) {
 					// Only bid, if we don't have this file locally.
-					url, err := b.FileServer.CreateUploadURL(FileID{
-						VolumeID: b.Volume.ID(),
+					url, err := b.fileServer.CreateUploadURL(FileID{
+						VolumeID: b.volume.ID(),
 						Path:     auction.file.Path,
 					})
 					if err != nil {
