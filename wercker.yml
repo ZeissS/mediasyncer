@@ -1,0 +1,38 @@
+box: golang
+
+build:
+  steps:
+    - wercker/setup-go-workspace:
+        package-dir: github.com/zeisss/mediasyncer
+    - script:
+        name: go get
+        code: |
+          go get github.com/zeisss/mediasyncer/server
+
+    - script:
+        name: prepare
+        code: mkdir $WERCKER_OUTPUT_DIR/dist
+
+    # Test the project
+    - script:
+        name: go test
+        code: |
+          go test ./...
+
+    # Build the project
+    - script:
+        name: go build (linux / ARM6)
+        code: |
+          GOOS=linux GOARCH=arm GOARM=6 go build -o "$WERCKER_OUTPUT_DIR/dist/mediawalker-linux-arm6" ./server
+    - script:
+        name: go build (linux / ARM7)
+        code: |
+          GOOS=linux GOARCH=arm GOARM=7 go build -o "$WERCKER_OUTPUT_DIR/dist/mediawalker-linux-arm7" ./server
+    - script:
+        name: go build (linux / AMD64)
+        code: |
+          GOOS=linux GOARCH=amd64 go build -o "$WERCKER_OUTPUT_DIR/dist/mediawalker-linux-amd64" ./server
+    - script:
+        name: go build (darwin / AMD64)
+        code: |
+          GOOS=darwin go build -o $WERCKER_OUTPUT_DIR/dist/mediawalker-darwin ./server

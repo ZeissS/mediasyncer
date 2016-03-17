@@ -1,6 +1,10 @@
 package inmemory
 
-import "time"
+import (
+
+	"time"
+	"path/filepath"
+)
 
 type File struct {
 	Path    string
@@ -19,7 +23,7 @@ type Volume struct {
 func NewVolume(id string, size uint64) *Volume {
 	return &Volume{
 		id:    id,
-		Files: []File{},
+		Files: make(map[string]File),
 		Size:  size,
 	}
 }
@@ -37,5 +41,5 @@ func (v *Volume) AvailableBytes() uint64 {
 }
 
 func (v *Volume) Walk(f filepath.WalkFunc) error {
-
+	return nil
 }
