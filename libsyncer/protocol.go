@@ -1,4 +1,4 @@
-// The interfaces of the protocol how peers talk to each other
+// File protocol.go defines the interfaces of the protocol how peers talk to each other.
 
 package libsyncer
 
@@ -7,28 +7,30 @@ import (
 	"time"
 )
 
+// MessageType specifies the ID of the message sent over a wire.
+type MessageType string
 const (
-	MessageAuctionStart = "auction.start"
-	MessageAuctionBid   = "auction.bid"
-	MessageAuctionEnd   = "auction.end"
+	MessageAuctionStart MessageType = "auction.start"
+	MessageAuctionBid MessageType   = "auction.bid"
+	MessageAuctionEnd MessageType   = "auction.end"
 )
 
-type Message struct {
-	Type   string
+type MessageFormatter struct {
+	Type   MessageType
 	Format string
 }
 
-func (m *Message) Serialize(args ...interface{}) string {
+func (m *MessageFormatter) Serialize(args ...interface{}) string {
 	return fmt.Sprintf(m.Format, args...)
 }
-func (m *Message) Deserialize(msg string, args ...interface{}) {
+func (m *MessageFormatter) Deserialize(msg string, args ...interface{}) {
 	fmt.Sscanf(msg, m.Format, args...)
 }
 
 var (
-	AuctionStartSerializer = &Message{MessageAuctionStart, "%s\t%s\t%s\t%d\t%s"}
-	AuctionBidSerializer   = &Message{MessageAuctionBid, "%s\t%g\t%s"}
-	AuctionEndSerializer   = &Message{MessageAuctionEnd, "%s\t%s"}
+	AuctionStartSerializer = &MessageFormatter{MessageAuctionStart, "%s\t%s\t%s\t%d\t%s"}
+	AuctionBidSerializer   = &MessageFormatter{MessageAuctionBid, "%s\t%g\t%s"}
+	AuctionEndSerializer   = &MessageFormatter{MessageAuctionEnd, "%s\t%s"}
 )
 
 type Price float32
@@ -60,9 +62,9 @@ type FileStats struct {
 type Transport interface {
 	// Peer name of the local node
 	Name() string
-	Subscribe(messageType string, callback func(peer, messageType, message string))
-	BroadcastTCP(messageType, message string) error
-	Send(peer, messageType, message string) error
+	Subscribe(messageType MessageType, callback func(peer string, messageType MessageType, message string))
+	BroadcastTCP(messageType MessageType, message string) error
+	Send(peer string, messageType MessageType, message string) error
 }
 
 type NetworkProtocol struct {
@@ -85,7 +87,7 @@ func (np *NetworkProtocol) AuctionStart(auctionID AuctionID, file FileID, stats 
 }
 
 func (np *NetworkProtocol) OnAuctionStart(cb func(peer string, auctionID AuctionID, file FileID, stats FileStats)) {
-	np.T.Subscribe(MessageAuctionStart, func(peer, mtype, message string) {
+	np.T.Subscribe(MessageAuctionStart, func(peer string, mtype MessageType, message string) {
 		var auctionID AuctionID
 		var file FileID
 		var stats FileStats
@@ -112,7 +114,7 @@ func (np *NetworkProtocol) AuctionBid(peer string, auctionID AuctionID, price Pr
 }
 
 func (np *NetworkProtocol) OnAuctionBid(cb func(peer string, auctionID AuctionID, price Price, url string)) {
-	np.T.Subscribe(MessageAuctionBid, func(peer, mtype, msg string) {
+	np.T.Subscribe(MessageAuctionBid, func(peer string, mtype MessageType, msg string) {
 		var auctionID AuctionID
 		var price Price
 		var url string
@@ -128,7 +130,7 @@ func (np *NetworkProtocol) AuctionEnd(auctionID AuctionID, winnerPeer string) er
 }
 
 func (np *NetworkProtocol) OnAuctionEnd(cb func(peer string, auctionID AuctionID, winnerPeer string)) {
-	np.T.Subscribe(MessageAuctionEnd, func(peer, mtype, msg string) {
+	np.T.Subscribe(MessageAuctionEnd, func(peer string, mtype MessageType, msg string) {
 		var auctionID AuctionID
 		var winnerPeer string
 		AuctionEndSerializer.Deserialize(msg, &auctionID, &winnerPeer)

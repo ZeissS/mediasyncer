@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
+
+	"github.com/zeisss/mediasyncer/libsyncer"
 )
 
 var (
@@ -18,10 +20,10 @@ func PrintMessages(b bool) {
 
 type Config *memberlist.Config
 
-type Callback func(peer string, messageType, message string)
+type Callback func(peer string, messageType libsyncer.MessageType, message string)
 type Network struct {
 	Memberlist  *memberlist.Memberlist
-	Subscribers map[string][]Callback
+	Subscribers map[libsyncer.MessageType][]Callback
 }
 
 func DefaultConfig() Config {
@@ -39,7 +41,7 @@ func New(cfg Config) *Network {
 
 	n := &Network{
 		Memberlist:  ml,
-		Subscribers: make(map[string][]Callback),
+		Subscribers: make(map[libsyncer.MessageType][]Callback),
 	}
 	sd.Callback = n.receiveMessage
 	return n
@@ -63,7 +65,7 @@ func (n *Network) Leave(timeout time.Duration) error {
 	return n.Memberlist.Shutdown()
 }
 
-func (n *Network) Send(peer, messageType, message string) error {
+func (n *Network) Send(peer string, messageType libsyncer.MessageType, message string) error {
 	if printMessages {
 		log.Printf("SENDING %s, %s:\t%s\n", peer, messageType, message)
 	}
@@ -82,7 +84,7 @@ func (n *Network) Send(peer, messageType, message string) error {
 
 // BroadcastTCP sends a message to each peer in the network, aborting on the first error.
 // This message can reach, 0, all or any number of members.
-func (n *Network) BroadcastTCP(messageType, message string) error {
+func (n *Network) BroadcastTCP(messageType libsyncer.MessageType, message string) error {
 	if printMessages {
 		log.Printf("BROADCAST %s:\t%s\n", messageType, message)
 	}
@@ -101,7 +103,7 @@ func (n *Network) BroadcastTCP(messageType, message string) error {
 	return nil
 }
 
-func (n *Network) Subscribe(messageType string, callback func(peer, messageType, message string)) {
+func (n *Network) Subscribe(messageType libsyncer.MessageType, callback func(peer string, messageType libsyncer.MessageType, message string)) {
 	l, ok := n.Subscribers[messageType]
 	if !ok {
 		l = []Callback{}
@@ -122,12 +124,12 @@ func (n *Network) receiveMessage(data []byte) {
 	}
 }
 
-func (n *Network) serializeMessage(sourcePeer, messageType, message string) []byte {
-	return []byte(sourcePeer + " " + messageType + " " + message)
+func (n *Network) serializeMessage(sourcePeer string, messageType libsyncer.MessageType, message string) []byte {
+	return []byte(sourcePeer + " " + string(messageType) + " " + message)
 }
-func (n *Network) deserializeMessage(data []byte) (string, string, string) {
+func (n *Network) deserializeMessage(data []byte) (string, libsyncer.MessageType, string) {
 	v := strings.SplitN(string(data), " ", 3)
-	return v[0], v[1], v[2]
+	return v[0],libsyncer.MessageType(v[1]), v[2]
 }
 
 type SyncerDelegate struct {
