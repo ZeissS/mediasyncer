@@ -9,10 +9,11 @@ import (
 
 // MessageType specifies the ID of the message sent over a wire.
 type MessageType string
+
 const (
 	MessageAuctionStart MessageType = "auction.start"
-	MessageAuctionBid MessageType   = "auction.bid"
-	MessageAuctionEnd MessageType   = "auction.end"
+	MessageAuctionBid   MessageType = "auction.bid"
+	MessageAuctionEnd   MessageType = "auction.end"
 )
 
 type MessageFormatter struct {

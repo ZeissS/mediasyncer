@@ -36,6 +36,8 @@ func PriceFormulaRandom() PriceFormula {
 //
 // This can be used to bid high on old files (e.g. for a rarely online storage)
 // or to keep new files on the server that downloaded them.
+//
+// Pass time.Now as the clock to use the current system time for this function.
 func PriceFormulaAge(preferOlder bool, age time.Duration, agePrice, defaultPrice Price, clock Clock) PriceFormula {
 	return func(file FileID, stats FileStats, freeSpace ByteSize) Price {
 		if stats.ModTime == nil {
@@ -43,11 +45,11 @@ func PriceFormulaAge(preferOlder bool, age time.Duration, agePrice, defaultPrice
 		}
 
 		// TODO: Test that this actually is the right logic
-		if preferOlder && clock().Add(-1 * age).Before(*stats.ModTime) {
+		if preferOlder && clock().Add(-1*age).Before(*stats.ModTime) {
 			return agePrice
 		}
 
-		if !preferOlder && time.Now().Add(-1 * age).After(*stats.ModTime) {
+		if !preferOlder && time.Now().Add(-1*age).After(*stats.ModTime) {
 			return agePrice
 		}
 		return defaultPrice

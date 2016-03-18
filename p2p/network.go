@@ -144,7 +144,7 @@ func (n *MemberlistTransport) serializeMessage(sourcePeer string, messageType li
 
 func (n *MemberlistTransport) deserializeMessage(data []byte) (string, libsyncer.MessageType, string) {
 	v := strings.SplitN(string(data), " ", 3)
-	return v[0],libsyncer.MessageType(v[1]), v[2]
+	return v[0], libsyncer.MessageType(v[1]), v[2]
 }
 
 type SyncerDelegate struct {

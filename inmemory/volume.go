@@ -1,9 +1,8 @@
 package inmemory
 
 import (
-
-	"time"
 	"path/filepath"
+	"time"
 )
 
 type File struct {
