@@ -62,8 +62,17 @@ type FileStats struct {
 type Transport interface {
 	// Peer name of the local node
 	Name() string
+
+	// Subscribe creates a subscription for messageType and invokes callback for any new message
+	// arriving over the transport.
 	Subscribe(messageType MessageType, callback func(peer string, messageType MessageType, message string))
+
+	// BroadcastTCP sends a message to each peer in the network, aborting on the first error.
+	// This message can reach, 0, all or any number of members.
 	BroadcastTCP(messageType MessageType, message string) error
+
+	// Send sends message tagged with messageType to the given peer. If the peers
+	// has any subscriptions for messageType, their callbacks will be invoked.
 	Send(peer string, messageType MessageType, message string) error
 }
 

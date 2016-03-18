@@ -1,3 +1,4 @@
+// Package p2p provides an implementation of libsyncer.Transport using Hashicorps Memberlist.
 package p2p
 
 import (
@@ -14,32 +15,39 @@ var (
 	printMessages = true
 )
 
+// PrintMessages enables (or disables) some debug output via the log package.
 func PrintMessages(b bool) {
 	printMessages = b
 }
 
-type Config *memberlist.Config
-
 type Callback func(peer string, messageType libsyncer.MessageType, message string)
-type Network struct {
+
+// Config defines the configuration for the network.
+type Config struct {
+	*memberlist.Config
+}
+
+// DefaultConfig provides a basic configuration based on memberlist.DefaultLANConfig()
+func DefaultConfig() Config {
+	return Config{memberlist.DefaultLANConfig()}
+}
+
+// MemberlistTransport provides an implementation of libsyncer.Transport using Hashicorps Memberlist.
+type MemberlistTransport struct {
 	Memberlist  *memberlist.Memberlist
 	Subscribers map[libsyncer.MessageType][]Callback
 }
 
-func DefaultConfig() Config {
-	return Config(memberlist.DefaultLANConfig())
-}
-
-func New(cfg Config) *Network {
+func New(cfg Config) *MemberlistTransport {
 	sd := &SyncerDelegate{}
-	var mlCfg *memberlist.Config = cfg
+	var mlCfg *memberlist.Config = cfg.Config
 	mlCfg.Delegate = sd
 	ml, err := memberlist.Create(mlCfg)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	n := &Network{
+	n := &MemberlistTransport{
 		Memberlist:  ml,
 		Subscribers: make(map[libsyncer.MessageType][]Callback),
 	}
@@ -47,25 +55,29 @@ func New(cfg Config) *Network {
 	return n
 }
 
-func (n *Network) Name() string {
+// Name returns peerID of the current node.
+func (n *MemberlistTransport) Name() string {
 	return n.Memberlist.LocalNode().Name
 }
 
 // Join tries to connect to the given peers and make them part of the network.
-func (n *Network) Join(peers []string) {
+func (n *MemberlistTransport) Join(peers []string) {
 
 	if len(peers) > 0 {
 		n.Memberlist.Join(peers)
 	}
 }
 
-func (n *Network) Leave(timeout time.Duration) error {
+// Leave shuts down the current Transport.
+func (n *MemberlistTransport) Leave(timeout time.Duration) error {
 	n.Memberlist.Leave(timeout)
 
 	return n.Memberlist.Shutdown()
 }
 
-func (n *Network) Send(peer string, messageType libsyncer.MessageType, message string) error {
+// Send sends message tagged with messageType to the given peer. If the peers
+// has any subscriptions for messageType, their callbacks will be invoked.
+func (n *MemberlistTransport) Send(peer string, messageType libsyncer.MessageType, message string) error {
 	if printMessages {
 		log.Printf("SENDING %s, %s:\t%s\n", peer, messageType, message)
 	}
@@ -84,7 +96,7 @@ func (n *Network) Send(peer string, messageType libsyncer.MessageType, message s
 
 // BroadcastTCP sends a message to each peer in the network, aborting on the first error.
 // This message can reach, 0, all or any number of members.
-func (n *Network) BroadcastTCP(messageType libsyncer.MessageType, message string) error {
+func (n *MemberlistTransport) BroadcastTCP(messageType libsyncer.MessageType, message string) error {
 	if printMessages {
 		log.Printf("BROADCAST %s:\t%s\n", messageType, message)
 	}
@@ -103,7 +115,9 @@ func (n *Network) BroadcastTCP(messageType libsyncer.MessageType, message string
 	return nil
 }
 
-func (n *Network) Subscribe(messageType libsyncer.MessageType, callback func(peer string, messageType libsyncer.MessageType, message string)) {
+// Subscribe creates a subscription for messageType and invokes callback for any new message
+// arriving over the transport.
+func (n *MemberlistTransport) Subscribe(messageType libsyncer.MessageType, callback func(peer string, messageType libsyncer.MessageType, message string)) {
 	l, ok := n.Subscribers[messageType]
 	if !ok {
 		l = []Callback{}
@@ -112,7 +126,7 @@ func (n *Network) Subscribe(messageType libsyncer.MessageType, callback func(pee
 	n.Subscribers[messageType] = append(l, callback)
 }
 
-func (n *Network) receiveMessage(data []byte) {
+func (n *MemberlistTransport) receiveMessage(data []byte) {
 	senderPeer, messageType, message := n.deserializeMessage(data)
 
 	if printMessages {
@@ -124,10 +138,11 @@ func (n *Network) receiveMessage(data []byte) {
 	}
 }
 
-func (n *Network) serializeMessage(sourcePeer string, messageType libsyncer.MessageType, message string) []byte {
+func (n *MemberlistTransport) serializeMessage(sourcePeer string, messageType libsyncer.MessageType, message string) []byte {
 	return []byte(sourcePeer + " " + string(messageType) + " " + message)
 }
-func (n *Network) deserializeMessage(data []byte) (string, libsyncer.MessageType, string) {
+
+func (n *MemberlistTransport) deserializeMessage(data []byte) (string, libsyncer.MessageType, string) {
 	v := strings.SplitN(string(data), " ", 3)
 	return v[0],libsyncer.MessageType(v[1]), v[2]
 }
