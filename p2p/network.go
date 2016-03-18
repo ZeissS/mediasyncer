@@ -35,7 +35,7 @@ func DefaultConfig() Config {
 // MemberlistTransport provides an implementation of libsyncer.Transport using Hashicorps Memberlist.
 type MemberlistTransport struct {
 	Memberlist  *memberlist.Memberlist
-	Subscribers map[libsyncer.MessageType][]Callback
+	subscribers map[libsyncer.MessageType][]Callback
 }
 
 func New(cfg Config) *MemberlistTransport {
@@ -49,7 +49,7 @@ func New(cfg Config) *MemberlistTransport {
 
 	n := &MemberlistTransport{
 		Memberlist:  ml,
-		Subscribers: make(map[libsyncer.MessageType][]Callback),
+		subscribers: make(map[libsyncer.MessageType][]Callback),
 	}
 	sd.Callback = n.receiveMessage
 	return n
@@ -118,12 +118,12 @@ func (n *MemberlistTransport) BroadcastTCP(messageType libsyncer.MessageType, me
 // Subscribe creates a subscription for messageType and invokes callback for any new message
 // arriving over the transport.
 func (n *MemberlistTransport) Subscribe(messageType libsyncer.MessageType, callback func(peer string, messageType libsyncer.MessageType, message string)) {
-	l, ok := n.Subscribers[messageType]
+	l, ok := n.subscribers[messageType]
 	if !ok {
 		l = []Callback{}
 	}
 
-	n.Subscribers[messageType] = append(l, callback)
+	n.subscribers[messageType] = append(l, callback)
 }
 
 func (n *MemberlistTransport) receiveMessage(data []byte) {
@@ -133,7 +133,7 @@ func (n *MemberlistTransport) receiveMessage(data []byte) {
 		log.Printf("RECEIVED %s, %s:\t%s\n", senderPeer, messageType, message)
 	}
 
-	for _, cb := range n.Subscribers[messageType] {
+	for _, cb := range n.subscribers[messageType] {
 		go cb(senderPeer, messageType, message)
 	}
 }
