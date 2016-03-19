@@ -44,7 +44,6 @@ func PriceFormulaAge(preferOlder bool, age time.Duration, agePrice, defaultPrice
 			return -1
 		}
 
-		// TODO: Test that this actually is the right logic
 		timeBoundary := clock().Add(-1*age)
 		if preferOlder && stats.ModTime.Before(timeBoundary) {
 			return agePrice
