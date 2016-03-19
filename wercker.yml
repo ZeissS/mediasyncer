@@ -61,28 +61,28 @@ deploy:
     - zeisss/mfs-upload@0.1.3:
         url: $FS_ENDPOINT
         file: ./dist/mediawalker-linux-arm6
-        path: /artifacts/github-deploy-agent/latest/mediawalker-linux-arm6
+        path: /artifacts/github-deploy-agent/${WERCKER_GIT_BRANCH}-${WERCKER_GIT_COMMIT}/mediawalker-linux-arm6
         username: $FS_USER
         password: $FS_PASSWORD
         acl: public-read
     - zeisss/mfs-upload@0.1.3:
         url: $FS_ENDPOINT
         file: ./dist/mediawalker-linux-arm7
-        path: /artifacts/github-deploy-agent/latest/mediawalker-linux-arm7
+        path: /artifacts/github-deploy-agent/${WERCKER_GIT_BRANCH}-${WERCKER_GIT_COMMIT}/mediawalker-linux-arm7
         username: $FS_USER
         password: $FS_PASSWORD
         acl: public-read
     - zeisss/mfs-upload@0.1.3:
         url: $FS_ENDPOINT
         file: ./dist/mediawalker-linux-amd64
-        path: /artifacts/github-deploy-agent/latest/mediawalker-linux-amd64
+        path: /artifacts/github-deploy-agent/${WERCKER_GIT_BRANCH}-${WERCKER_GIT_COMMIT}/mediawalker-linux-amd64
         username: $FS_USER
         password: $FS_PASSWORD
         acl: public-read
     - zeisss/mfs-upload@0.1.3:
         url: $FS_ENDPOINT
         file: ./dist/mediawalker-darwin
-        path: /artifacts/github-deploy-agent/latest/mediawalker-agent-darwin
+        path: /artifacts/github-deploy-agent/${WERCKER_GIT_BRANCH}-${WERCKER_GIT_COMMIT}/mediawalker-agent-darwin
         username: $FS_USER
         password: $FS_PASSWORD
         acl: public-read
